@@ -36,5 +36,5 @@ if __name__ == "__main__":
     seg = Seg.Seg()
     tracker = Tracker.Tracker()
 
-    url = r"rtsp://admin:abcd1234@192.168.2.99:554/h265/ch1/main/video"
-    infer(url,seg,"http://192.168.2.16:8800/seg",25)
+    url = r"rtsp://admin:abcd1234@192.168.2.102:554/h265/ch1/main/video"
+    infer(url,tracker,"http://192.168.2.16:8800/person_tracker",25)

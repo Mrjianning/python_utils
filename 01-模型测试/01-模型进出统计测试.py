@@ -6,6 +6,8 @@ import threading
 import concurrent.futures
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
+import os
+import random
 
 # 初始化配置信息
 class Config:
@@ -49,6 +51,29 @@ def plot_result(frame, results, conf):
         # 在图像上绘制边界框和标识
         cv2.rectangle(frame, (int(x), int(y)), (int(w + x), int(h + y)), (255, 0, 0), 2)
         cv2.putText(frame, txt, (int(x + w / 2), int(y + h / 2)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 4)
+
+        # 截取边界框内容并且保存，根据t_id创建文件夹存储对应id的图片，图片命名格式是{t_id}_c{cameraID}s{sequenceNumber}_{frameNumber}_{detectedID}.jpg
+        cameraID = 102
+        detectedID = 0  # 可以根据需要设定detectedID
+
+        # 随机生成 sequenceNumber 和 frameNumber
+        sequenceNumber = random.randint(1, 9999)
+        frameNumber = int(time.time() * 1000)  # 使用时间戳的毫秒部分生成唯一的frameNumber
+
+        # 截取边界框内容
+        cropped_frame = frame[int(y):int(y+h), int(x):int(x+w)]
+
+        # 创建文件夹（如果不存在）
+        save_dir = fr"C:/Users/admin/Desktop/output/{t_id}"
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
+        # 保存图像，命名格式：{t_id}_c{cameraID}s{sequenceNumber}_{frameNumber}_{detectedID}.jpg
+        img_name = f"{t_id}_c{cameraID}s{sequenceNumber}_{frameNumber}_{detectedID}.jpg"
+        save_path = os.path.join(save_dir, img_name)
+        cv2.imwrite(save_path, cropped_frame)
+
+        print(f"Saved: {save_path}")
 
         # 判断进出
         start_point = (int(frame.shape[1] * 0.5), int(0))
@@ -118,7 +143,7 @@ def process_video(model_url, video_queue, visualization_queue):
             res = requests.post(model_url, data=img_data.tobytes(), headers={'Content-Type': 'image/jpeg'})
             end_t = time.time()
             dt = (end_t - start_t) * 1000
-            print("网络请求耗时: {:.2f} 毫秒".format(dt))   
+            # print("网络请求耗时: {:.2f} 毫秒".format(dt))   
 
             res = res.json()
 
@@ -130,15 +155,15 @@ def process_video(model_url, video_queue, visualization_queue):
             end_point = (int(frame.shape[1] * 0.5), int(frame.shape[0]))
             plot_line(frame, start_point, end_point)
 
-            font_path = './fonts/uming.ttc'  # 替换为你自己的中文字体路径
-            font_size = 80  # 字体大小
-            color = (0, 0, 255)  # 文本颜色（BGR 格式）
+            # font_path = './fonts/uming.ttc'  # 替换为你自己的中文字体路径
+            # font_size = 80  # 字体大小
+            # color = (0, 0, 255)  # 文本颜色（BGR 格式）
 
-            # 添加中文文本
-            text = f'人进: {conf.count_enter}, 人出: {conf.count_out}, 库内人数: {conf.count_all}'
-            frame = put_chinese_text(frame, text, (0, 200), font_path, font_size, color)
+            # # 添加中文文本
+            # text = f'人进: {conf.count_enter}, 人出: {conf.count_out}, 库内人数: {conf.count_all}'
+            # frame = put_chinese_text(frame, text, (0, 200), font_path, font_size, color)
 
-            # cv2.putText(frame, f'人进: {conf.count_enter}, 人出: {conf.count_out}', (0, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 4)
+            cv2.putText(frame, f'人进: {conf.count_enter}, 人出: {conf.count_out}', (0, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 4)
 
             visualization_queue.put(frame)
 
@@ -150,13 +175,13 @@ def process_video(model_url, video_queue, visualization_queue):
 
         _, img_data = cv2.imencode('.jpg', frame)
         size_in_mb = len(img_data) / (1024 * 1024)
-        print(size_in_mb, "MB")
+        # print(size_in_mb, "MB")
 
         executor.submit(process_request, img_data, frame)  # 使用线程池异步处理请求
 
 def main():
-    url = r"rtsp://admin:abcd1234@192.168.2.163:554/h265/ch1/main/video"
-    model_url = "http://192.168.2.66:8800/person" 
+    url = r"rtsp://admin:abcd1234@192.168.2.102:554/h265/ch1/main/video"
+    model_url = "http://192.168.2.16:8800/person_tracker" 
     target_fps = 25  # 目标帧率
 
     cap = cv2.VideoCapture(url)

@@ -179,7 +179,7 @@ class Tracker:
 
             _, img_data = cv2.imencode('.jpg', frame)
             size_in_mb = len(img_data) / (1024 * 1024)
-            print(size_in_mb, "MB")
+            # print(size_in_mb, "MB")
 
             executor.submit(process_request, img_data, frame)  # 使用线程池异步处理请求
 
